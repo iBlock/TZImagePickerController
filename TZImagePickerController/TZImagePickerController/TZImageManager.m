@@ -9,6 +9,7 @@
 #import "TZImageManager.h"
 #import <AssetsLibrary/AssetsLibrary.h>
 #import "TZAssetModel.h"
+#import "NSData+Utils.h"
 #import "TZImagePickerController.h"
 
 @interface TZImageManager ()
@@ -379,6 +380,14 @@ static CGFloat TZScreenScale;
                 NSString *bytes = [self getBytesFromDataLength:dataLength];
                 if (completion) completion(bytes);
             }
+        } else if ([model.asset isKindOfClass:[UIImage class]]) {
+            NSData *imageData = UIImagePNGRepresentation(model.asset);
+            dataLength += imageData.length;
+            assetCount ++;
+            if (i >= photos.count - 1) {
+                NSString *bytes = [self getBytesFromDataLength:dataLength];
+                if (completion) completion(bytes);
+            }
         }
     }
 }
@@ -729,9 +738,13 @@ static CGFloat TZScreenScale;
         NSData *data1 = UIImagePNGRepresentation(asset);
         BOOL isEqual = false;
         for (UIImage *image in assets) {
-            NSData *data2 = UIImagePNGRepresentation(image);
-            if ([data1 isEqual:data2]) {
-                return true;
+            if ([image isKindOfClass:[UIImage class]]) {
+                NSData *data2 = UIImagePNGRepresentation(image);
+                if ([data1 isEqual:data2]) {
+                    return true;
+                }
+            } else {
+                continue;
             }
         }
         return isEqual;
@@ -766,7 +779,8 @@ static CGFloat TZScreenScale;
 
 - (NSString *)getAssetIdentifier:(id)asset {
     if ([asset isKindOfClass:[UIImage class]]) {
-        return nil;
+        NSData *data = UIImagePNGRepresentation(asset);
+        return [data MD5];
     }
     
     if (iOS8Later) {
