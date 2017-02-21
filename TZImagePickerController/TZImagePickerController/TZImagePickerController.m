@@ -31,6 +31,9 @@
 /// Default is 4, Use in photos collectionView in TZPhotoPickerController
 /// 默认4列, TZPhotoPickerController中的照片collectionView
 @property (nonatomic, assign) NSInteger columnNumber;
+
+@property (nonatomic, strong) NSArray *customImageList;
+
 @end
 
 @implementation TZImagePickerController
@@ -111,6 +114,11 @@
     [super viewWillDisappear:animated];
     [UIApplication sharedApplication].statusBarStyle = _originStatusBarStyle;
     [self hideProgressHUD];
+}
+
+- (instancetype)initWithMaxImagesCount:(NSInteger)maxImagesCount AlbumModel:(NSArray *)photoList delegate:(id<TZImagePickerControllerDelegate>)delegate {
+    self.customImageList = photoList;
+    return [self initWithMaxImagesCount:maxImagesCount columnNumber:4 delegate:delegate pushPhotoPickerVc:YES];
 }
 
 - (instancetype)initWithMaxImagesCount:(NSInteger)maxImagesCount delegate:(id<TZImagePickerControllerDelegate>)delegate {
@@ -268,11 +276,20 @@
         TZPhotoPickerController *photoPickerVc = [[TZPhotoPickerController alloc] init];
         photoPickerVc.isFirstAppear = YES;
         photoPickerVc.columnNumber = self.columnNumber;
-        [[TZImageManager manager] getCameraRollAlbum:self.allowPickingVideo allowPickingImage:self.allowPickingImage completion:^(TZAlbumModel *model) {
-            photoPickerVc.model = model;
-            [self pushViewController:photoPickerVc animated:YES];
-            _didPushPhotoPickerVc = YES;
-        }];
+        
+        if (self.customImageList) {
+            [[TZImageManager manager] getCustomAlbum:self.customImageList completion:^(TZAlbumModel *model) {
+                photoPickerVc.model = model;
+                [self pushViewController:photoPickerVc animated:YES];
+                _didPushPhotoPickerVc = YES;
+            }];
+        } else {
+            [[TZImageManager manager] getCameraRollAlbum:self.allowPickingVideo allowPickingImage:self.allowPickingImage completion:^(TZAlbumModel *model) {
+                photoPickerVc.model = model;
+                [self pushViewController:photoPickerVc animated:YES];
+                _didPushPhotoPickerVc = YES;
+            }];
+        }
     }
 }
 

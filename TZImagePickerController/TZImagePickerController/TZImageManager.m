@@ -94,6 +94,13 @@ static CGFloat TZScreenScale;
 
 #pragma mark - Get Album
 
+/// 生成自定义Album对象
+- (void)getCustomAlbum:(NSArray *)imageList
+            completion:(void (^)(TZAlbumModel *))completion {
+    TZAlbumModel *albumModel = [self modelWithResult:imageList name:@"我的衣柜"];
+    if (completion) completion(albumModel);
+}
+
 /// Get Album 获得相册/相册数组
 - (void)getCameraRollAlbum:(BOOL)allowPickingVideo allowPickingImage:(BOOL)allowPickingImage completion:(void (^)(TZAlbumModel *))completion{
     __block TZAlbumModel *model;
@@ -226,6 +233,14 @@ static CGFloat TZScreenScale;
                 if (resultBlock) { resultBlock(result,index,stop); }
             }];
         }
+    } else if ([result isKindOfClass:[NSArray class]]) {
+        [result enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            TZAssetModel *model = [self assetModelWithAsset:obj allowPickingVideo:allowPickingVideo allowPickingImage:allowPickingImage];
+            if (model) {
+                [photoArr addObject:model];
+            }
+        }];
+        if (completion) completion(photoArr);
     }
 }
 
@@ -296,6 +311,9 @@ static CGFloat TZScreenScale;
         NSString *timeLength = type == TZAssetModelMediaTypeVideo ? [NSString stringWithFormat:@"%0.0f",phAsset.duration] : @"";
         timeLength = [self getNewTimeFromDurationSecond:timeLength.integerValue];
         model = [TZAssetModel modelWithAsset:asset type:type timeLength:timeLength];
+    } else if ([asset isKindOfClass:[UIImage class]]) {
+        model = [TZAssetModel modelWithAsset:asset type:type];
+        return model;
     } else {
         if (!allowPickingVideo){
             model = [TZAssetModel modelWithAsset:asset type:type];
@@ -466,6 +484,12 @@ static CGFloat TZScreenScale;
                 }
             });
         });
+    } else if ([asset isKindOfClass:[UIImage class]]) {
+        UIImage *image = asset;
+        UIImage *fullScrennImage = [UIImage imageWithCGImage:image.CGImage scale:2.0 orientation:UIImageOrientationUp];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (completion) completion(fullScrennImage,nil,NO);
+        });
     }
     return 0;
 }
@@ -481,9 +505,19 @@ static CGFloat TZScreenScale;
             if (completion) completion(photo);
         }];
     } else {
-        ALAssetsGroup *group = model.result;
-        UIImage *postImage = [UIImage imageWithCGImage:group.posterImage];
-        if (completion) completion(postImage);
+        id asset = [model.result lastObject];
+        if (!self.sortAscendingByModificationDate) {
+            asset = [model.result firstObject];
+        }
+        if ([asset isKindOfClass:[UIImage class]]) {
+            UIImage *image = asset;
+            UIImage *fullScrennImage = [UIImage imageWithCGImage:image.CGImage scale:2.0 orientation:UIImageOrientationUp];
+            if (completion) completion(fullScrennImage);
+        } else {
+            ALAssetsGroup *group = model.result;
+            UIImage *postImage = [UIImage imageWithCGImage:group.posterImage];
+            if (completion) completion(postImage);
+        }
     }
 }
 
@@ -691,6 +725,18 @@ static CGFloat TZScreenScale;
 
 /// Judge is a assets array contain the asset 判断一个assets数组是否包含这个asset
 - (BOOL)isAssetsArray:(NSArray *)assets containAsset:(id)asset {
+    if ([asset isKindOfClass:[UIImage class]]) {
+        NSData *data1 = UIImagePNGRepresentation(asset);
+        BOOL isEqual = false;
+        for (UIImage *image in assets) {
+            NSData *data2 = UIImagePNGRepresentation(image);
+            if ([data1 isEqual:data2]) {
+                return true;
+            }
+        }
+        return isEqual;
+    }
+    
     if (iOS8Later) {
         return [assets containsObject:asset];
     } else {
@@ -719,6 +765,10 @@ static CGFloat TZScreenScale;
 }
 
 - (NSString *)getAssetIdentifier:(id)asset {
+    if ([asset isKindOfClass:[UIImage class]]) {
+        return nil;
+    }
+    
     if (iOS8Later) {
         PHAsset *phAsset = (PHAsset *)asset;
         return phAsset.localIdentifier;
@@ -739,6 +789,9 @@ static CGFloat TZScreenScale;
 }
 
 - (CGSize)photoSizeWithAsset:(id)asset {
+    if ([asset isKindOfClass:[UIImage class]]) {
+        return ((UIImage *)asset).size;
+    }
     if (iOS8Later) {
         PHAsset *phAsset = (PHAsset *)asset;
         return CGSizeMake(phAsset.pixelWidth, phAsset.pixelHeight);
@@ -760,6 +813,9 @@ static CGFloat TZScreenScale;
     } else if ([result isKindOfClass:[ALAssetsGroup class]]) {
         ALAssetsGroup *group = (ALAssetsGroup *)result;
         model.count = [group numberOfAssets];
+    } else if ([result isKindOfClass:[NSArray class]]) {
+        NSArray *list = (NSArray *)result;
+        model.count = list.count;
     }
     return model;
 }

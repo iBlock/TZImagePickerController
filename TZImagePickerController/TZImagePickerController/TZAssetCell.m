@@ -28,6 +28,23 @@
 
 - (void)setModel:(TZAssetModel *)model {
     _model = model;
+    
+    if ([model.asset isKindOfClass:[UIImage class]]) {
+        self.imageRequestID = 0;
+        self.selectPhotoButton.selected = model.isSelected;
+        self.selectImageView.image = self.selectPhotoButton.isSelected ? [UIImage imageNamedFromMyBundle:self.photoSelImageName] : [UIImage imageNamedFromMyBundle:self.photoDefImageName];
+        self.type = (NSInteger)model.type;
+        // 让宽度/高度小于 最小可选照片尺寸 的图片不能选中
+        if (![[TZImageManager manager] isPhotoSelectableWithAsset:model.asset]) {
+            if (_selectImageView.hidden == NO) {
+                self.selectPhotoButton.hidden = YES;
+                _selectImageView.hidden = YES;
+            }
+        }
+        self.imageView.image = model.asset;
+        return ;
+    }
+    
     if (iOS8Later) {
         self.representedAssetIdentifier = [[TZImageManager manager] getAssetIdentifier:model.asset];
     }
