@@ -12,6 +12,7 @@
 #import "TZTestCell.h"
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <Photos/Photos.h>
+#import "UIImage+Utils.h"
 #import "LxGridViewFlowLayout.h"
 #import "TZImageManager.h"
 #import "TZVideoPlayerController.h"
@@ -204,6 +205,7 @@
     }
     
     UIImage *testImage = [UIImage imageNamed:@"testIcon"];
+    testImage.imageTag = @"123456";
     TZAlbumModel *model = [[TZImageManager manager] getCustomAlbumWithName:@"我的衣柜" imageList:@[testImage]];
     TZImagePickerController *imagePickerVc = [[TZImagePickerController alloc] initWithMaxImagesCount:self.maxCountTF.text.integerValue AlbumModel:@[model] delegate:self];
     
