@@ -207,7 +207,7 @@
     UIImage *testImage = [UIImage imageNamed:@"testIcon"];
     testImage.imageTag = @"123456";
     TZAlbumModel *model = [[TZImageManager manager] getCustomAlbumWithName:@"我的衣柜" imageList:@[testImage]];
-    TZImagePickerController *imagePickerVc = [[TZImagePickerController alloc] initWithMaxImagesCount:self.maxCountTF.text.integerValue AlbumModel:@[model] delegate:self];
+    TZImagePickerController *imagePickerVc = [[TZImagePickerController alloc] initWithMaxImagesCount:self.maxCountTF.text.integerValue AlbumModel:@[model] AlbumType:AlbumType_All delegate:self pushPhotoPickerVc:YES];
     
 //    TZImagePickerController *imagePickerVc = [[TZImagePickerController alloc] initWithMaxImagesCount:self.maxCountTF.text.integerValue columnNumber:self.columnNumberTF.text.integerValue delegate:self pushPhotoPickerVc:YES];
     
