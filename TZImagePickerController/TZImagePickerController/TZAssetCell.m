@@ -30,18 +30,21 @@
     _model = model;
     
     if ([model.asset isKindOfClass:[UIImage class]]) {
-        self.imageRequestID = 0;
-        self.selectPhotoButton.selected = model.isSelected;
-        self.selectImageView.image = self.selectPhotoButton.isSelected ? [UIImage imageNamedFromMyBundle:self.photoSelImageName] : [UIImage imageNamedFromMyBundle:self.photoDefImageName];
-        self.type = (NSInteger)model.type;
-        // 让宽度/高度小于 最小可选照片尺寸 的图片不能选中
-        if (![[TZImageManager manager] isPhotoSelectableWithAsset:model.asset]) {
-            if (_selectImageView.hidden == NO) {
-                self.selectPhotoButton.hidden = YES;
-                _selectImageView.hidden = YES;
-            }
+        [self prepareAssetModel:model qiniuImage:nil];
+        return ;
+    }
+    
+    if ([model.asset isKindOfClass:[NSString class]]) {
+        TZImageManager *manager = [TZImageManager manager];
+        id<TZImageManagerDelegate> delegate = manager.delegate;
+        if (delegate && [delegate respondsToSelector:@selector(downloadImageForQiniuKey:CompletionHandler:)]) {
+            [delegate downloadImageForQiniuKey:model.asset CompletionHandler:^(UIImage *photo) {
+                if (photo) {
+                    model.qiniuImage = photo;
+                    [self prepareAssetModel:model qiniuImage:photo];
+                }
+            }];
         }
-        self.imageView.image = model.asset;
         return ;
     }
     
@@ -86,6 +89,22 @@
     if (model.isSelected) {
         [self fetchBigImage];
     }
+}
+
+- (void)prepareAssetModel:(TZAssetModel *)model qiniuImage:(UIImage *)qiniuImage {
+    self.imageRequestID = 0;
+    self.selectPhotoButton.selected = model.isSelected;
+    self.selectImageView.image = self.selectPhotoButton.isSelected ? [UIImage imageNamedFromMyBundle:self.photoSelImageName] : [UIImage imageNamedFromMyBundle:self.photoDefImageName];
+    self.type = (NSInteger)model.type;
+    // 让宽度/高度小于 最小可选照片尺寸 的图片不能选中
+    UIImage *img = qiniuImage?qiniuImage:model.asset;
+    if (![[TZImageManager manager] isPhotoSelectableWithAsset:img]) {
+        if (_selectImageView.hidden == NO) {
+            self.selectPhotoButton.hidden = YES;
+            _selectImageView.hidden = YES;
+        }
+    }
+    self.imageView.image = img;
 }
 
 - (void)setShowSelectBtn:(BOOL)showSelectBtn {

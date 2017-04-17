@@ -312,7 +312,8 @@ static CGFloat TZScreenScale;
         NSString *timeLength = type == TZAssetModelMediaTypeVideo ? [NSString stringWithFormat:@"%0.0f",phAsset.duration] : @"";
         timeLength = [self getNewTimeFromDurationSecond:timeLength.integerValue];
         model = [TZAssetModel modelWithAsset:asset type:type timeLength:timeLength];
-    } else if ([asset isKindOfClass:[UIImage class]]) {
+    } else if ([asset isKindOfClass:[UIImage class]] ||
+               [asset isKindOfClass:[NSString class]]) {
         model = [TZAssetModel modelWithAsset:asset type:type];
         return model;
     } else {
@@ -499,6 +500,18 @@ static CGFloat TZScreenScale;
         dispatch_async(dispatch_get_main_queue(), ^{
             if (completion) completion(fullScrennImage,nil,NO);
         });
+    } else if ([asset isKindOfClass:[NSString class]]) {
+        if (_delegate && [_delegate respondsToSelector:@selector(downloadImageForQiniuKey:CompletionHandler:)]) {
+            [_delegate downloadImageForQiniuKey:asset CompletionHandler:^(UIImage *photo) {
+                if (photo) {
+                    UIImage *fullScrennImage = [UIImage imageWithCGImage:photo.CGImage scale:2.0 orientation:UIImageOrientationUp];
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        if (completion) completion(fullScrennImage,nil,NO);
+                    });
+                }
+            }];
+        }
+        
     }
     return 0;
 }
@@ -749,6 +762,18 @@ static CGFloat TZScreenScale;
         return isEqual;
     }
     
+    if ([asset isKindOfClass:[NSString class]]) {
+        BOOL isEqual = false;
+        for(NSString *name in assets) {
+            if ([name isEqualToString:asset]) {
+                return true;
+            } else {
+                continue;
+            }
+        }
+        return isEqual;
+    }
+    
     if (iOS8Later) {
         return [assets containsObject:asset];
     } else {
@@ -782,6 +807,10 @@ static CGFloat TZScreenScale;
         return image.imageTag;
     }
     
+    if ([asset isKindOfClass:[NSString class]]) {
+        return asset;
+    }
+    
     if (iOS8Later) {
         PHAsset *phAsset = (PHAsset *)asset;
         return phAsset.localIdentifier;
@@ -805,6 +834,11 @@ static CGFloat TZScreenScale;
     if ([asset isKindOfClass:[UIImage class]]) {
         return ((UIImage *)asset).size;
     }
+    
+    if ([asset isKindOfClass:[NSString class]]) {
+        return CGSizeZero;
+    }
+    
     if (iOS8Later) {
         PHAsset *phAsset = (PHAsset *)asset;
         return CGSizeMake(phAsset.pixelWidth, phAsset.pixelHeight);

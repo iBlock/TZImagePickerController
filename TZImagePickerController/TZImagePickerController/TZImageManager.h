@@ -11,8 +11,16 @@
 #import <AVFoundation/AVFoundation.h>
 #import <Photos/Photos.h>
 
+@protocol TZImageManagerDelegate <NSObject>
+
+- (void)downloadImageForQiniuKey:(NSString *)photoName CompletionHandler:(void (^)(UIImage *photo))completionHandler;
+
+@end
+
 @class TZAlbumModel,TZAssetModel;
 @interface TZImageManager : NSObject
+
+@property (nonatomic, weak) id<TZImageManagerDelegate>delegate;
 
 @property (nonatomic, strong) PHCachingImageManager *cachingImageManager;
 
